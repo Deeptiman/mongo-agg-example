@@ -1,13 +1,9 @@
 package main
 
 import (
-	"fmt"
-	"time"
-	"os"
-	"strings"
 	"context"
-	"net/http"
 	"encoding/json"
+	"fmt"
 	gohandlers "github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/hashicorp/go-hclog"
@@ -16,6 +12,10 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 	"go.mongodb.org/mongo-driver/mongo/writeconcern"
+	"net/http"
+	"os"
+	"strings"
+	"time"
 )
 
 var (

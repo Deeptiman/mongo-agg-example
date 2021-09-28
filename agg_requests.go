@@ -1,10 +1,12 @@
 package main
 
 import (
-	"fmt"
 	"context"
-	"go.mongodb.org/mongo-driver/mongo"
+	"encoding/json"
+	"fmt"
+
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func filterGenreAgg(ctx context.Context, client *mongo.Client, input_genre string) interface{} {
@@ -14,14 +16,14 @@ func filterGenreAgg(ctx context.Context, client *mongo.Client, input_genre strin
 
 	fmt.Println("Genre ---> ", input_genre)
 
-	query := []bson.M{		
+	query := []bson.M{
 		bson.M{
 			"$project": bson.M{
 				"movie_details": "$$ROOT",
 				"filter_genre": bson.M{
 					"$filter": bson.M{
 						"input": "$genres",
-						"as": "gnr",
+						"as":    "gnr",
 						"cond": bson.M{
 							"$eq": []interface{}{"$$gnr", input_genre},
 						},
@@ -32,7 +34,18 @@ func filterGenreAgg(ctx context.Context, client *mongo.Client, input_genre strin
 		bson.M{
 			"$unwind": "$filter_genre",
 		},
+		bson.M{
+			"$match": bson.M{
+				"movie_details.imdb.rating": bson.M{
+					"$lt": 5,
+				},
+			},
+		},
 	}
+
+	qu, _ := json.MarshalIndent(query, ", ", " ")
+
+	fmt.Println("Queries -->> ", string(qu))
 
 	cursor, err := collection.Aggregate(ctx, query)
 	if err != nil {
@@ -49,5 +62,5 @@ func filterGenreAgg(ctx context.Context, client *mongo.Client, input_genre strin
 	fmt.Println("Total Docs -- ", len(info))
 
 	return info
-	
+
 }
