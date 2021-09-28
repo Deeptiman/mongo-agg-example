@@ -1,0 +1,119 @@
+{
+	"_id": {
+		"$oid": "573a13b6f29313caabd48af3"
+	},
+	"plot": "The vampire Alucard and his newly sired ward Seras tries to protect England from a war-crazed SS-Major who seeks to start an eternal war with his vampire army.",
+	"genres": ["Animation", "Action", "Fantasy"],
+	"runtime": 50,
+	"rated": "TV-MA",
+	"cast": ["Katie Gray", "Victoria Harwood", "Crispin Freeman", "Ralph Lister"],
+	"num_mflix_comments": 2,
+	"poster": "https://m.media-amazon.com/images/M/MV5BYTU5ZWExZjktMmI5MC00MjUwLTk0MjAtNDExMDk1ZDUzZWY3XkEyXkFqcGdeQXVyNjc3OTE4Nzk@._V1_SY1000_SX677_AL_.jpg",
+	"title": "Hellsing Ultimate",
+	"fullplot": "In flashback, Integra is seen assuming leadership of the Hellsing organization as she resolves a conflict with her uncle with the help of the vampire Alucard. In present day, Alucard goes on a mission to the town of Cheddar to silence a vampiric priest who has been killing townspeople, and in the process must also present the young police girl Seras Victoria with the choice to either die or become a vampire. Also, Alucard battles a Vatican priest named Alexander Anderson after they are both sent to kill the same vampire in Northern Ireland.",
+	"languages": ["Japanese"],
+	"released": {
+		"$date": "2006-12-05T00:00:00.000Z"
+	},
+	"writers": ["Kohta Hirano"],
+	"awards": {
+		"wins": 5,
+		"nominations": 3,
+		"text": "5 wins & 3 nominations."
+	},
+	"lastupdated": "2015-08-17 00:55:25.017000000",
+	"year": "2006è2012",
+	"imdb": {
+		"rating": 8.5,
+		"votes": 8525,
+		"id": 495212
+	},
+	"countries": ["Japan"],
+	"type": "series",
+	"tomatoes": {
+		"viewer": {
+			"rating": 3.2,
+			"numReviews": 1510,
+			"meter": 93
+		},
+		"dvd": {
+			"$date": "2003-12-09T00:00:00.000Z"
+		},
+		"lastUpdated": {
+			"$date": "2015-08-21T18:39:56.000Z"
+		}
+	}
+}
+
+
+/// project [map]
+
+[]bson.M{
+    "$project": bson.M{
+        "Data": bson.M{
+            "$map": bson.M{
+                "input": "$mfgname",
+                "as": "productData",
+                "in": bson.M{
+                    "modelno": "$$productData.modelno",
+                    "mfgname": "$$productData.mfgname",
+                    "product": bson.M{
+                        "$filter": bson.M{
+                            "input": "$productList",
+                            "as": "product",
+                            "cond": bson.M{
+                                "$eq": []interface{}{"$$product.mfgname", "$$productList.mfgname"},
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// lookup [facet]
+
+[]bson.M{
+    bson.M{
+        "$match": bson.M{
+            "mfgname": "Google",
+        }
+    }
+    bson.M{
+        "$facet": bson.M{
+            "col1": []bson.M{
+                bson.M{
+                    "$lookup": bson.M{
+                        "from": "product_list",
+                        "pipeline": []bson.M{
+                            bson.M{
+                                "$match": bson.M{
+                                    "mfgname": "Google",
+                                }
+                            }
+                        }
+                        "as":   "list",
+                    }
+                }
+            }, 
+            "col2": []bson.M{
+                bson.M{
+                    "$lookup": bson.M{
+                        "from": "product_data",
+                        "pipeline": []bson.M{
+                            bson.M{
+                                "$match": bson.M{
+                                    "mfgname": "Google",
+                                }
+                            }
+                        }
+                        "as":   "data",
+                    }
+                }
+            }
+        }
+    }
+}
+
+{_id: ObjectId("573a1390f29313caabcd418c")}
