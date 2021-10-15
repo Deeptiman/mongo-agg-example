@@ -38,7 +38,10 @@ func main() {
 	request := router.Methods(http.MethodGet).Subrouter()
 	request.HandleFunc("/api/movies/filter-genere", FilterGenre).
 		Queries("genre", "{genre:[A-Za-z,]+}")
-
+	request.HandleFunc("/api/movies/bucket-query", BucketQuery)
+	request.HandleFunc("/api/movies/graph-lookup", GraphLookup).
+		Queries("email", "{email:[a-zA-Z0-9+_.-]+@[a-zA-Z0-9.-]+$}")
+	
 	mongoConnection()
 
 	cors := gohandlers.CORS(gohandlers.AllowedOrigins([]string{"*"}))
@@ -115,6 +118,26 @@ func FilterGenre(w http.ResponseWriter, r *http.Request) {
 	info := filterGenreAgg(ctx, client, genre)
 
 	RespondJSON(w, http.StatusOK, info)
+}
+
+func BucketQuery(w http.ResponseWriter, r *http.Request) {
+
+	ctx, _ := context.WithTimeout(context.Background(), 50*time.Second)
+
+	graph := bucketAggQuery(ctx, client)
+
+	RespondJSON(w, http.StatusOK, graph)
+}
+
+func GraphLookup(w http.ResponseWriter, r *http.Request) {
+
+	ctx, _ := context.WithTimeout(context.Background(), 50*time.Second)
+
+	email := strings.TrimSpace(r.URL.Query().Get("email"))
+
+	graph := graphLookup(ctx, client, email)
+
+	RespondJSON(w, http.StatusOK, graph)
 }
 
 func RespondJSON(w http.ResponseWriter, status int, payload interface{}) {
