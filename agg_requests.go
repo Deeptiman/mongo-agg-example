@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-
+	"strconv"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -89,6 +89,44 @@ func bucketAggQuery(ctx context.Context, client *mongo.Client) interface{} {
 					// 	},
 					// },
 				},
+			},
+		},
+	}
+
+	return ExecuteQuery(ctx, query, collection)
+}
+
+func geoNearAggQuery(ctx context.Context, client *mongo.Client, lat, long string) interface{} {
+
+	database := client.Database("sample_mflix")
+	collection := database.Collection("theaters")
+
+	var latC, longC float64
+	if l, err := strconv.ParseFloat(lat, 32); err == nil {
+		latC = l
+	}
+
+	if l, err := strconv.ParseFloat(long, 32); err == nil {
+		longC = l
+	}
+
+	query := []bson.M{
+		bson.M{
+			"$geoNear": bson.M{
+				"near": bson.M{
+					"type": "Point",
+					"coordinates": []interface{}{latC,longC},
+				},
+				"minDistance": 2,
+				"maxDistance": 200000,
+				"distanceField": "distance",
+				"includeLocs": "geo",
+				"spherical": true,
+			},
+		},
+		bson.M{
+			"$project": bson.M{
+				"location.geo": 0,
 			},
 		},
 	}

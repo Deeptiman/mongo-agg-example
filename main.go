@@ -39,9 +39,12 @@ func main() {
 	request.HandleFunc("/api/movies/filter-genere", FilterGenre).
 		Queries("genre", "{genre:[A-Za-z,]+}")
 	request.HandleFunc("/api/movies/bucket-query", BucketQuery)
+	request.HandleFunc("/api/movies/geonear", GeoNearQuery).
+		Queries("lat", "{lat:[-0-9.]+}").
+		Queries("long", "{long:[0-9.,]+}")	
 	request.HandleFunc("/api/movies/graph-lookup", GraphLookup).
 		Queries("email", "{email:[a-zA-Z0-9+_.-]+@[a-zA-Z0-9.-]+$}")
-	
+
 	mongoConnection()
 
 	cors := gohandlers.CORS(gohandlers.AllowedOrigins([]string{"*"}))
@@ -127,6 +130,19 @@ func BucketQuery(w http.ResponseWriter, r *http.Request) {
 	graph := bucketAggQuery(ctx, client)
 
 	RespondJSON(w, http.StatusOK, graph)
+}
+
+func GeoNearQuery(w http.ResponseWriter, r *http.Request) {
+
+	ctx, _ := context.WithTimeout(context.Background(), 50*time.Second)
+
+	lat := strings.TrimSpace(r.URL.Query().Get("lat"))
+	long := strings.TrimSpace(r.URL.Query().Get("long"))
+
+	locations := geoNearAggQuery(ctx, client, lat, long)
+
+	RespondJSON(w, http.StatusOK, locations)
+
 }
 
 func GraphLookup(w http.ResponseWriter, r *http.Request) {
