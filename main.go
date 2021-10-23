@@ -78,6 +78,8 @@ func mongoConnection() {
 
 	// mongodb+srv://admin:admin123@cluster0.p5zvm.mongodb.net/product?authSource=admin&replicaSet=atlas-v7g7gu-shard-0&readPreference=primary&appname=MongoDB%20Compass&ssl=true
 
+	// mongosh mongodb+srv://cluster0.p5zvm.mongodb.net/sample_mflix --username admin --password admin123 --authenticationDatabase admin
+
 	client, err = mongo.NewClient(options.Client().
 		ApplyURI("mongodb+srv://admin:admin123@cluster0.p5zvm.mongodb.net/sample_mflix?authSource=admin&replicaSet=atlas-v7g7gu-shard-0&readPreference=primary&appname=MongoDB%20Compass&ssl=true").
 		SetPoolMonitor(poolMonitor).

@@ -9,6 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+// #1
 func filterGenreAgg(ctx context.Context, client *mongo.Client, input_genre string) interface{} {
 
 	database := client.Database("sample_mflix")
@@ -66,6 +67,7 @@ func filterGenreAgg(ctx context.Context, client *mongo.Client, input_genre strin
 	return ExecuteQuery(ctx, query, collection)
 }
 
+// #2
 func bucketAggQuery(ctx context.Context, client *mongo.Client) interface{} {
 
 	database := client.Database("sample_mflix")
@@ -96,6 +98,7 @@ func bucketAggQuery(ctx context.Context, client *mongo.Client) interface{} {
 	return ExecuteQuery(ctx, query, collection)
 }
 
+// #3
 func geoNearAggQuery(ctx context.Context, client *mongo.Client, lat, long string) interface{} {
 
 	database := client.Database("sample_mflix")
@@ -134,6 +137,7 @@ func geoNearAggQuery(ctx context.Context, client *mongo.Client, lat, long string
 	return ExecuteQuery(ctx, query, collection)
 }
 
+// #4
 func graphLookup(ctx context.Context, client *mongo.Client, email string) interface{} {
 
 	database := client.Database("sample_mflix")
@@ -159,17 +163,41 @@ func graphLookup(ctx context.Context, client *mongo.Client, email string) interf
 		},
 		bson.M{
 			"$unwind": "$comments",
-		},		
+		},
 		bson.M{
-			"$group": bson.M{
-				"_id": "$email",
-				"comments": bson.M{
-					"$push": bson.M{
-						"movie_id": "$comments.movie_id",
-						"comment": "$comments.text",
-						"date": "$comments.date",
+			"$lookup": bson.M{
+				"from": "movies",
+				"let": bson.M{
+					"movieId": bson.M{
+						"$toObjectId": "$comments.movie_id",
 					},
 				},
+				"pipeline": []bson.M{
+					bson.M{
+						"$match": bson.M{
+							"$expr": bson.M{
+								"$eq": []interface{}{"$_id", "$$movieId"},
+							},
+						},
+					},
+					bson.M{
+						"$project": bson.M{
+							"title": "$title",
+							"poster": "$poster",
+						},
+					},
+				},
+				"as": "movie_details",
+			},
+		},
+		bson.M{
+			"$unwind": "$movie_details",
+		},
+		bson.M{
+			"$project": bson.M{
+				"name": 0,
+				"email": 0,
+				"password": 0,
 			},
 		},
 	}

@@ -1,0 +1,60 @@
+MongoDB Aggregation Pipeline in Go
+
+
+Run Database query with one-go
+
+The database transaction to retrieve a large number of records in a single query is a daunting task. The millions of 
+documents stored in the database have complex relationships with data nodes that require seamless flow with the software 
+application service. The data node defines the business data processing workloads to perform an intensive task in real-time. 
+The business software applications (Stock Market, Disaster Management, a Cryptocurrency marketplace, Census dashboard) 
+require in-flight analytical data with a single database query to retrieve grouped data and a faster business transaction 
+timeline. 
+
+Techniques to handle large datasets
+
+MongoDB provides data processing functions to analyze large datasets and produce the final aggregated results. The Map Reduce 
+and Aggregation pipeline are 2 ways of aggregating, grouping, filtering data nodes in MongoDB with several functional stages.
+
+-  What is Map-Reduce?
+    Map Reduce is a javascript functional model to map documents with emit(key-value) pair based function and the reduce
+    function performs the aggregation of the data node that returns the output to the client. 
+
+    -- Structure of Map-Reduce in MongoDB
+       MongoDB uses "mapReduce" database command for a collection to apply the aggregation for a query. The map-reduce 
+       function faciliate to write computational logic for a data node under map function and emit the key-value result to
+       reduce function for finializing the resultant document.  
+       
+    For example: A "mapReduce" function to count number of imdb votes for a movie stored under a collection.
+
+    <<-- screenshot movie list -->>
+
+    db.movies.mapReduce(
+        function(){ // map
+            emit(1,this.imdb.rating.votes);
+        }, 
+        function(key,vals){ // reduce
+            var count = 0;
+            vals.forEach(function(v) {
+                count +=v;
+            });
+
+            return count;
+        }, 
+        {
+            query: {"imdb.rating": {"$lt": 7.5}}, // query 
+            out: "vote_counts" // output
+        }
+    );
+
+    db.vote_counts.find({}).pretty()
+
+    { "_id" : 1, "value" : 271026594 }
+
+
+-  Aggregation pipeline 
+
+
+What is MongoDB Aggregation Pipeline?
+
+The technique to combine multiple records into one group
+
