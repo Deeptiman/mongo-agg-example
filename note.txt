@@ -30,7 +30,7 @@ and Aggregation pipeline are 2 ways of aggregating, grouping, filtering data nod
 
     db.movies.mapReduce(
         function(){ // map
-            emit(1,this.imdb.rating.votes);
+            emit(1,this.imdb.votes);
         }, 
         function(key,vals){ // reduce
             var count = 0;
