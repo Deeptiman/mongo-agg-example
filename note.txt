@@ -44,12 +44,13 @@ and Aggregation pipeline are 2 ways of aggregating, grouping, filtering data nod
             query: {"imdb.rating": {"$lt": 7.5}}, // query 
             out: "vote_counts" // output
         }
-    );
+    ).find();
 
-    db.vote_counts.find({}).pretty()
-
-    { "_id" : 1, "value" : 271026594 }
-
+    Output:
+    { "_id" : 1, "value" : 271026594 } // 600 ms
+        
+    The performance of this "vote_counts" mapReduce function is very slow because mapReduce javascript code needs to be 
+    interpreted.
 
 -  Aggregation pipeline 
 
