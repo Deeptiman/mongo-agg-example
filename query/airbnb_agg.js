@@ -9,7 +9,7 @@ db.getCollection("listingsAndReviews").aggregate(
 			    "beds": {"$gte": 0}
 			}
 		},
-
+		
 		// Stage 2
 		{
 			$group: {

@@ -1,13 +1,4 @@
-/**
- * from: The target collection.
- * startWith: Expression to start.
- * connectFromField: Field to connect.
- * connectToField: Field to connect to.
- * as: Name of the array field.
- * maxDepth: Optional max recursion depth.
- * depthField: Optional Name of the depth field.
- * restrictSearchWithMatch: Optional query.
- */
+
 {
   from: 'movies',
   startWith: "$movie_id",

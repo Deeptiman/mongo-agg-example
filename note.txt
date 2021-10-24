@@ -46,11 +46,27 @@ and Aggregation pipeline are 2 ways of aggregating, grouping, filtering data nod
         }
     ).find();
 
+
+- What is Aggregation pipeline?
+
+    The Aggregation pipeline works as a data processing framework in MongoDB to aggregate hierarchical data 
+nodes. There will be several stages to process the documents that pass through a pipeline to filter out the 
+final analyzed document. The pipeline operators used to apply logical queries and accumulate the filtered 
+documents to transform an output structure. The performance of the aggregation pipeline is significantly high 
+compared to Map-Reduce because the framework runs with compiled C++ codes. The data flow control works as a 
+sequence of stages that the output of the previous stage becomes the input to the next stage. In each stage, 
+the pipeline operator decides the type of aggregation action to perform in the database engine. 
+
+
+
+
+
+
     Output:
     { "_id" : 1, "value" : 271026594 } // 600 ms
         
-    The performance of this "vote_counts" mapReduce function is very slow because mapReduce javascript code needs to be 
-    interpreted.
+    The performance of this "vote_counts" mapReduce function is very slow because mapReduce javascript code 
+    needs to be interpreted.
 
 -  Aggregation pipeline 
 
