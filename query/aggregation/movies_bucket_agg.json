@@ -1,0 +1,20 @@
+{
+ 
+  "$bucket": {
+  from: 'comments',
+  let: {
+    "movieId": {
+      "$toObjectId": "$doc._id"
+    },
+  },
+  pipeline: [{
+    "$match": {
+      "$expr": {
+        "$eq": ["$movie_id","$$movieId"]
+      }
+    }
+  }],
+  as: 'comments'
+}
+ 
+}

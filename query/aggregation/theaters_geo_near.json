@@ -1,0 +1,17 @@
+{
+
+  "$geoNear": {
+  near:{
+    type: "Point",
+    coordinates: [-119.7412, 39.579536]
+  },
+  minDistance: 2,
+  maxDistance: 200000000,
+  distanceField: "distance",
+  includeLocs: "geo",
+  spherical: true
+},
+"$project": {
+  "location.geo": 0
+}
+}

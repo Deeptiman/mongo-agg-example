@@ -1,0 +1,30 @@
+{
+
+  "$match": {
+	"email": {
+		"$eq": "amy_ramirez@fakegmail.com"
+	}
+  },
+  "$graphLookup": {
+  from: 'comments',
+	startWith: "$email",
+	connectFromField: "email",
+	connectToField: "email",
+	maxDepth: 3,
+	as: 'comments'
+  },
+  "$unwind": {
+    path: "$comments"
+  },
+  "$group": {
+  	_id: "$email",
+	comments: {
+		"$push": {
+	    "movie_id": "$comments.movie_id",
+		  "comment": "$comments.text",
+		  "date": "$comments.date"
+	  }
+	}
+  }
+
+}

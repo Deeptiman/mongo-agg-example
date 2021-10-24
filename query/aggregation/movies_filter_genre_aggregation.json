@@ -1,0 +1,45 @@
+[{
+	
+   "$project": 
+{
+  "doc": "$$ROOT",
+  "filter_genre": {
+    "$filter": {
+        "input": "$genres",
+        "as": "genr",
+        "cond": {
+          "$eq": ["$$genr", "War"]
+      }
+    }
+  }
+},
+{
+   "$unwind": {
+  "path": "$filter_genre"
+}
+{
+ "$match": {
+  "doc.imdb.rating": {
+    "$lt": 5
+  }
+}
+{
+  "$lookup": {
+  from: 'comments',
+  let: {
+    "movieId": {
+      "$toObjectId": "$doc._id"
+    },
+  },
+  pipeline: [{
+    "$match": {
+      "$expr": {
+        "$eq": ["$movie_id","$$movieId"]
+      }
+    }
+  }],
+  as: 'comments'
+}
+
+	
+]

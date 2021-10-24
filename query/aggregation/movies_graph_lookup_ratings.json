@@ -1,0 +1,13 @@
+{
+
+  "$graphLookup": {
+  from: 'movies',
+  startWith: "$tomatoes.viewer.rating",
+  connectFromField: "tomatoes.viewer.rating",
+  connectToField: "tomatoes.viewer.rating",
+  maxDepth: 2,
+  restrictSearchWithMatch: {"tomatoes.viewer.rating": 4.1},
+  as: 'report'
+}
+ 
+}
