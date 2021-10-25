@@ -29,10 +29,13 @@ and Aggregation pipeline are 2 ways of aggregating, grouping, filtering data nod
     <<-- screenshot movie list -->>
 
     db.movies.mapReduce(
-        function(){ // map
+        // map
+        function(){
             emit(1,this.imdb.votes);
         }, 
-        function(key,vals){ // reduce
+
+        // reduce
+        function(key,vals){ 
             var count = 0;
             vals.forEach(function(v) {
                 count +=v;
@@ -40,9 +43,15 @@ and Aggregation pipeline are 2 ways of aggregating, grouping, filtering data nod
 
             return count;
         }, 
-        {
-            query: {"imdb.rating": {"$lt": 7.5}}, // query 
-            out: "vote_counts" // output
+        {  
+            // query  
+            query: {
+                "imdb.rating": {
+                    "$lt": 7.5
+                }
+            }, 
+            // output
+            out: "vote_count" 
         }
     ).find();
 
@@ -57,21 +66,58 @@ compared to Map-Reduce because the framework runs with compiled C++ codes. The d
 sequence of stages that the output of the previous stage becomes the input to the next stage. In each stage, 
 the pipeline operator decides the type of aggregation action to perform in the database engine. 
 
+- How to write Aggregation pipeline?
+The pipeline written as BSON format passes directly into the "aggregate()" function in the Mongo Shell for 
+executing the aggregation query. Also, MongoDB provides language-specific drivers that will have an in-built 
+Aggregation framework with structure API functions to implement the Aggregation pipeline in the application. 
 
+The following "aggregate" function count the total votes using aggregation pipeline. In the first stage, 
+the "$match" operator applies a conditional query to filter the documents with less than 7.5 "imdb.rating". 
+Then the second stage takes the filtered document as input to accumulate the $sum of "imdb.votes" and groups 
+the vote_count using $group operator. 
 
+    db.movies.aggregate(
 
+        // Pipeline
+        [
+            // Stage 1
+            {
+                $match: {
+                    // conditional query 
+                    "imdb.rating": {
+                        "$lt": 7.5
+                    }
+                }
+            },
 
+            // Stage 2
+            {
+                $group: {
+                    _id: "total_vote",
+                    vote_count: { 
+                        "$sum": "$imdb.votes"
+                    }
+                }
+            },
+        ]
+    );
 
-    Output:
-    { "_id" : 1, "value" : 271026594 } // 600 ms
-        
-    The performance of this "vote_counts" mapReduce function is very slow because mapReduce javascript code 
-    needs to be interpreted.
+    Analyzing Explain Plan
 
--  Aggregation pipeline 
+    The performance measurement of the aggregation query is fully analyzed using explain plan. 
+    As an internal layer, the aggregation framework uses MongoDB Query Language (MQL) to execute the query. 
+    In the process of optimizing the aggregation query database engine reorders the pipeline stages and 
+    embeds the $cursor operator as the first stage of the pipeline to decide to pick the best possible 
+    winning plan for stages. The winningPlan will form the metadata like the type of document scan 
+    [IXSCAN, COLLSCAN, FETCH] operation for the stages that will be used to retrieve the document faster.
 
+    Visualizing Aggregation flow in Studio 3T
 
-What is MongoDB Aggregation Pipeline?
+    In Studio 3T, the transactional flow shows the total time to produce the result and the size of the 
+    documents generated in each stage of the pipeline. The explain query in Studio 3T quite useful to 
+    visualize the process for an aggregation pipeline.
+    
+    << -- screenshot of aggregation flow -- >>
+    
 
-The technique to combine multiple records into one group
 
