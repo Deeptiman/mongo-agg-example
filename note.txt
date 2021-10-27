@@ -104,12 +104,147 @@ the vote_count using $group operator.
 
     Analyzing Explain Plan
 
-    The performance measurement of the aggregation query is fully analyzed using explain plan. 
+    The performance measurement of the aggregation query is fully analyzed using explain plan. MongoDB supports
+    three type of verbosity mode than can explain a query execution plan, queryPlanner, executionStats and 
+    allPlansExecution. 
+    
     As an internal layer, the aggregation framework uses MongoDB Query Language (MQL) to execute the query. 
     In the process of optimizing the aggregation query database engine reorders the pipeline stages and 
     embeds the $cursor operator as the first stage of the pipeline to decide to pick the best possible 
-    winning plan for stages. The winningPlan will form the metadata like the type of document scan 
-    [IXSCAN, COLLSCAN, FETCH] operation for the stages that will be used to retrieve the document faster.
+    winning plan for stages. The winningPlan will form the metadata to make a judgment call on type document
+    scan operation [IXSCAN, COLLSCAN, FETCH] on stage for faster retreival of the documents.
+
+
+    Explain with queryPlanner
+
+    db.getCollection("movies").explain("queryPlanner").aggregate(pipeline)
+
+    "stages" : [
+        {
+            "$cursor" : {
+                "queryPlanner" : {
+                    "namespace" : "movie_details.movies", 
+                    "indexFilterSet" : false, 
+                    "parsedQuery" : {
+                        "imdb.rating" : {
+                            "$lt" : 7.5
+                        }
+                    }, 
+                    "queryHash" : "148454AD", 
+                    "planCacheKey" : "42DB0972", 
+                    "maxIndexedOrSolutionsReached" : false, 
+                    "maxIndexedAndSolutionsReached" : false, 
+                    "maxScansToExplodeReached" : false, 
+                    "winningPlan" : {
+                        "stage" : "PROJECTION_DEFAULT", 
+                        "transformBy" : {
+                            "imdb.votes" : 1.0, 
+                            "_id" : 0.0
+                        }, 
+                        "inputStage" : {
+                            "stage" : "COLLSCAN", // scan entire collection to match with the record
+                            "filter" : {
+                                "imdb.rating" : {
+                                    "$lt" : 7.5
+                                }
+                            }, 
+                            "direction" : "forward"
+                        }
+                    }, 
+                    "rejectedPlans" : [
+
+                    ]
+                }
+            }
+        }, 
+        {
+            "$group" : {
+                "_id" : {
+                    "$const" : "total_vote"
+                }, 
+                "vote_count" : {
+                    "$sum" : "$imdb.votes"
+                }
+            }
+        }
+    ]
+
+    Here the "winningPlan" stage metadata is scanned with "COLLSCAN" operation, so the entire collection data 
+    nodes require to iterate all rows and records to map/match with the particular records. The COLLSCAN is 
+    pretty slow and very much ineffective mapping with an enormously large data set. The queryPlanner also 
+    supports indexing with IXSCAN that doesn't need to perform an entire collection scan but an index filter 
+    can instantly map with a particular record.
+
+
+    Explain with executionStats
+    
+    The statistics of winning plan query execution contains in "executionStats" mode. 
+    
+    db.getCollection("movies").explain("executionStats").aggregate(pipeline)
+
+    "stages" : [
+
+            "executionStats" : {
+                    "executionSuccess" : true, 
+                    "nReturned" : 18511.0, 
+                    "executionTimeMillis" : 42.0, 
+                    "totalKeysExamined" : 0.0, 
+                    "totalDocsExamined" : 23530.0, 
+                    "executionStages" : {
+                        "stage" : "PROJECTION_DEFAULT", 
+                        "nReturned" : 18511.0, 
+                        "executionTimeMillisEstimate" : 2.0, 
+                        "works" : 23532.0, 
+                        "advanced" : 18511.0, 
+                        "needTime" : 5020.0, 
+                        "needYield" : 0.0, 
+                        "saveState" : 24.0, 
+                        "restoreState" : 24.0, 
+                        "isEOF" : 1.0, 
+                        "transformBy" : {
+                            "imdb.votes" : 1.0, 
+                            "_id" : 0.0
+                        }, 
+                        "inputStage" : {
+                            "stage" : "COLLSCAN", 
+                            "filter" : {
+                                "imdb.rating" : {
+                                    "$lt" : 7.5
+                                }
+                            }, 
+                            "nReturned" : 18511.0, 
+                            "executionTimeMillisEstimate" : 1.0, 
+                            "works" : 23532.0, 
+                            "advanced" : 18511.0, 
+                            "needTime" : 5020.0, 
+                            "needYield" : 0.0, 
+                            "saveState" : 24.0, 
+                            "restoreState" : 24.0, 
+                            "isEOF" : 1.0, 
+                            "direction" : "forward", 
+                            "docsExamined" : 23530.0
+                        }
+                    }
+                }
+            }, 
+            "nReturned" : NumberLong(18511), 
+            "executionTimeMillisEstimate" : NumberLong(29)
+    ]
+
+
+    nReturned: Number of document returned from the query, in this case 18511 movies returned to the client.
+
+    executionTimeMillis: The query execution time in millisecond that helps to understand the performance of 
+    the aggregation query.
+
+    filter: The conditional query statement included in the aggregation pipeline. 
+    
+    "imdb.rating" : { "$lt" : 7.5 }
+
+    docsExamined: Total document examined in the collection to match with particular searching record
+
+    
+
 
     Visualizing Aggregation flow in Studio 3T
 
