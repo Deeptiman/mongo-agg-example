@@ -102,6 +102,278 @@ the vote_count using $group operator.
         ]
     );
 
+    Complex Aggregation Pipelines
+
+    The MongoDB aggregation framework has many operators that support to aggregate in the pipeline stages. 
+    The operators are treated as MongoDB query commands to perform query actions and then either process the 
+    pipeline into the next available stage or collect the filtered document at the final pipeline stage. 
+    The pipeline execution is an algorithmic process of a finite sequence of blocking structures that perform
+    several aggregation functions.
+
+    - sorting, merging of documents from more one collection.
+    - Arithmatic computation of numeric data nodes. 
+    - Accumulate a data node to apply Mongo aggregation expression ($avg, $sum, $addField, $concat).
+    - Apply GeoSpatial command to find near by address or calculate min/max distance.
+    - and many more
+
+    Type of Aggregation Pipeline Operators
+
+    - $project
+      In the collection of documents, sometimes of their won't be need to fetch all data items. The performance
+    of query improved with selecting neccessary field of documents.
+
+    Example:
+
+    There is a simple movie details collection and only specific fields 'title', 'plot', 'year', 'rating' required
+    to be retrieve from the collection.
+
+    {
+        "_id": ObjectId("573a1391f29313caabcd8b94"),
+        "title": "The Last Command",
+        "plot": "A former Imperial Russian general and cousin of the Czar ends up in Hollywood as an 
+        extra in a movie directed by a former revolutionary.",
+        "rated": "GOOD",
+        "language": "Russian",
+        "year": 1928,
+        "poster": "https://m.media-amazon.com/images/M/MV5BMTg2Mjg3MDI5OF5BMl5BanBnXkFtZTgwMjMzMDMyMjE@._V1_SY1000_SX677_AL_.jpg",
+        "director": "Josef von Sternberg",
+        "awards": {
+            "wins": 2,
+            "nominations" : 1,
+            "result": "Won 1 Oscar. Another 1 win & 1 nomination."
+        },
+        "imdb": {
+            "rating": 8,
+            "votes": 2090,
+            "id": 19071
+        },
+        "genres": ["Drama", "History", "War"]
+    }
+
+    $project aggregation query
+
+    db.movies.aggregate([{
+        $project: {
+            _id: 0, title: 1, plot: 1, year: 1, imdb.rating: 1
+        }
+    }]).pretty()
+
+    result
+
+    {
+        "plot":"A former Imperial Russian general and cousin of the Czar ends up in Hollywood as an extra in 
+            a movie directed by a former revolutionary.",
+        "title":"The Last Command",
+        "year":1928
+    }
+
+    - $group
+    The distinct category of grouping documents followed by _id is supported by $group operator. The ouput field
+    document holds the accumlated value of object. There are various accumulator expressions used in different scenarios.
+
+    Example-1
+
+    - Find the total number of votes for all the movies using $sum accumulator expression.
+
+    list of movies:
+
+    << Add 10 list of movies >>
+
+    query: 
+
+    db.movies.aggregate([{
+        $group: {
+            "_id": "total_votes",
+            "count": {
+                "$sum": "$imdb.votes"
+            }
+        }
+    }])
+
+    result: 
+    { "_id" : "total_votes", "count" : 478794967 }
+
+    Example-2
+
+    - Find the recent movie document using "$last" accumulator expression with the genre "War".
+
+    list of movies:
+
+    << Add 10 list of movies >>
+
+    query:
+
+        db.movies.aggregate([
+            // Stage - 1
+            {
+                $unwind: "$genres", // $unwind to deserialize the array of documents
+            },
+            // Stage - 2
+            {
+                $match: {
+                    "genres": "War"           
+                },
+            },
+            // Stage - 3
+            {
+                $group: {
+                    "_id": "Movie",
+                    "doc": {
+                        "$last": "$$ROOT" // similar $first accumulator expression to retreive first movie doc
+                    }
+                },
+            }
+    ]).pretty()
+
+    result:
+
+    << output of the latest movie doc >>
+
+    - $lookup
+    The MongoDB stores the documents in multiple collection and also a good practice to distribute the records
+    to reduce the storage volume for collection. The foreign key attribute to maintain relationship between collection
+    with similar shared data items. 
+
+    $lookup query structure
+
+    -- Structure 1
+    {
+        $lookup:
+            {
+                from: <collection to join>,
+                localField: <field from the input documents>,
+                foreignField: <field from the documents of the "from" collection>,
+                as: <output array field>
+            }
+    }
+
+    -- Structure 2
+    {
+        $lookup:
+            {
+                from: <collection to join>,
+                let: { <var_1>: <expression>, …, <var_n>: <expression> },
+                pipeline: [ <pipeline to run on joined collection> ],
+                as: <output array field>
+            }
+    }
+
+
+    list of movies:
+
+    << Add 10 list of movies >>
+
+    list of comments for the movie
+
+    << Add 20 list of comments >>
+
+
+    Example - 1:
+
+    The list of comments for the movies stored in separate collection and requirement is to retreive movie comments
+    with genres "Comedy" and "imdb.rating" greater than 5.
+
+    query:
+
+        db.movies.aggregate([
+            // Stage - 1
+            {
+                $unwind: "$genres"
+            },
+            // Stage - 2
+            {
+                $match: { 
+                    "genres": "Comedy",
+                    "imdb.rating" : {
+                        $gt: 5
+                    }           
+                }
+            },
+            // Stage - 3
+            {
+                $lookup: {
+                    "from": "comments",
+                    "localField": "_id",
+                    "foreignField": "movie_id",
+                    "as": "comments"
+                }
+            },
+            // Stage - 4
+            {
+                
+                $project: {
+                    "_id": 0,
+                    "comments": 1
+                }
+            }
+        ]).pretty() 
+
+    result:
+
+    << list of movies with comments >>
+
+    Example - 2:
+    
+    In this requirement to retrieve sorted with latest comment in ascending order. So, we need to apply $lookup 
+    pipeline attribute to run sorting pipeline within the join collection.
+
+    query:
+
+        db.movies.aggregate([
+            // Stage - 1
+            {
+                $unwind: "$genres"
+            },
+            // Stage - 2
+            {
+                $match: { 
+                    "genres": "Comedy",
+                    "imdb.rating" : {
+                        $gt: 5
+                    }           
+                }
+            },
+            // Stage - 3
+            {
+                $lookup: {
+                    "from": "comments",
+                    "let": {
+                        "movieId": {
+                            "$toObjectId": "$_id"
+                        }
+                    },
+                    "pipeline": [
+                        {
+                            $match: {
+                                $expr: {
+                                    $eq: ["$movie_id", "$$movieId"]
+                                }
+                            }
+                        },
+                        {
+                            $sort : {
+                                "date": -1
+                            }					
+                        }				
+                    ],
+                    "as": "comments"
+                }
+            },
+            // Stage - 4
+            {
+                $project: {
+                    "_id": 0,
+                    "comments": 1
+                }
+            }
+        ]).pretty()
+
+    results:
+
+    << list of sorted comments for the movie >>
+
+    
+
     Analyzing Explain Plan
 
     The performance measurement of the aggregation query is fully analyzed using explain plan. MongoDB supports
@@ -242,8 +514,6 @@ the vote_count using $group operator.
     "imdb.rating" : { "$lt" : 7.5 }
 
     docsExamined: Total document examined in the collection to match with particular searching record
-
-    
 
 
     Visualizing Aggregation flow in Studio 3T
