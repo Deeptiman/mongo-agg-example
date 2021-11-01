@@ -372,7 +372,64 @@ the vote_count using $group operator.
 
     << list of sorted comments for the movie >>
 
+    - $graphLookup
+        MongoDB provides graph searching among collections with similar relationships. The recursive search 
+    on the collection continues until the searching node is found or the defined levels of maxDepth have 
+    reached the limit.
+
+    $graphLookup query structure
+
+    ---  
+        {
+            $graphLookup: {
+                from: <collection to join>,
+                startWith: <expression that begins the search>,
+                connectFromField: <field name to map with `from` collection>,
+                connectToField: <field name that map with aggregated collection>,
+                as: <ouput object>,
+                maxDepth: <defined level of depth to perform recursive search>
+            }
+        }
+
+
+    - $geoNear
+        MongoDB supports geolocation queries with $geoNear aggregator. There are plenty of use-cases on 
+    geography coordinates to calculate nearby distances with the point. The GeoJSON coordinate pair work 
+    well in the aggregation to point to the closet documents in the collection.
+
+    Example :
+        Find the nearby theaters within certain radius on given lat/long coordinates.
+
+        << list of theaters >>
     
+    query:
+        db.theaters.aggregate([
+            // Stage - 1
+            {
+                "$geoNear": {
+                    "near": {
+                        "type": "Point",
+                        "coordinates": []interface{}{latC,longC},
+                    },
+                    "minDistance": 2,
+                    "maxDistance": 200000,
+                    "distanceField": "distance",
+                    "includeLocs": "geo",
+                    "spherical": true,
+                },
+            },
+            // Stage - 2
+            {
+                "$project": bson.M{
+                    "location.geo": 0,
+                },
+            }
+        ])
+
+    result: 
+
+    
+
 
     Analyzing Explain Plan
 
@@ -514,6 +571,8 @@ the vote_count using $group operator.
     "imdb.rating" : { "$lt" : 7.5 }
 
     docsExamined: Total document examined in the collection to match with particular searching record
+
+
 
 
     Visualizing Aggregation flow in Studio 3T
