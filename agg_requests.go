@@ -101,8 +101,8 @@ func bucketAggQuery(ctx context.Context, client *mongo.Client) interface{} {
 // #3
 func geoNearAggQuery(ctx context.Context, client *mongo.Client, lat, long string) interface{} {
 
-	database := client.Database("sample_mflix")
-	collection := database.Collection("theaters")
+	database := client.Database("movie_details")
+	collection := database.Collection("theater_list")
 
 	var latC, longC float64
 	if l, err := strconv.ParseFloat(lat, 32); err == nil {
@@ -118,10 +118,10 @@ func geoNearAggQuery(ctx context.Context, client *mongo.Client, lat, long string
 			"$geoNear": bson.M{
 				"near": bson.M{
 					"type": "Point",
-					"coordinates": []interface{}{latC,longC},
+					"coordinates": []interface{}{latC, longC},
 				},
 				"minDistance": 2,
-				"maxDistance": 200000,
+				"maxDistance": 2000000,
 				"distanceField": "distance",
 				"includeLocs": "geo",
 				"spherical": true,
@@ -198,6 +198,69 @@ func graphLookup(ctx context.Context, client *mongo.Client, email string) interf
 				"name": 0,
 				"email": 0,
 				"password": 0,
+			},
+		},
+	}
+
+	return ExecuteQuery(ctx, query, collection)
+}
+
+// #5
+func commentAggQuery(ctx context.Context, client *mongo.Client, genre string) interface{}{
+
+	database := client.Database("movie_details")
+	collection := database.Collection("movie_list")
+
+	fmt.Println("Genre -- ", genre)
+
+	query := []bson.M{
+		 // Stage - 1
+		bson.M{
+			"$unwind": "$genres",
+		},
+		// Stage - 2
+		bson.M{
+			"$match": bson.M{ 
+				"genres": genre,
+				"imdb.rating" : bson.M{
+					"$gt": 5,
+				},           
+			},
+		},
+		// Stage - 3
+		bson.M{
+			"$lookup": bson.M{
+				"from": "comment_list",
+				"localField": "_id",
+                "foreignField": "movie_id",
+				// "let": bson.M{
+				// 	"movieId": bson.M{
+				// 		"$toObjectId": "$_id",
+				// 	},
+				// },
+				// "pipeline": []bson.M{
+				// 	bson.M{
+				// 		"$match": bson.M{
+				// 			"$expr": bson.M{
+				// 				"$eq": []interface{}{"$movie_id", "$$movieId"},
+				// 			},
+				// 		},
+				// 	},
+				// 	bson.M{
+				// 		"$sort" : bson.M{
+				// 			"date": -1,
+				// 		},					
+				// 	},				
+				// },
+				"as": "comments",
+			},
+		},
+		// Stage - 4
+		bson.M{
+			"$project": bson.M{
+				"_id": -1,
+				"title": -1,
+				"comments": 1,
 			},
 		},
 	}

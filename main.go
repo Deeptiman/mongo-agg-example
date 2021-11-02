@@ -38,6 +38,8 @@ func main() {
 	request := router.Methods(http.MethodGet).Subrouter()
 	request.HandleFunc("/api/movies/filter-genere", FilterGenre).
 		Queries("genre", "{genre:[A-Za-z,]+}")
+	request.HandleFunc("/api/movies/lookup-comment", CommentsReq).
+		Queries("genre", "{genre:[A-Za-z,]+}")
 	request.HandleFunc("/api/movies/bucket-query", BucketQuery)
 	request.HandleFunc("/api/movies/geonear", GeoNearQuery).
 		Queries("lat", "{lat:[-0-9.]+}").
@@ -81,7 +83,8 @@ func mongoConnection() {
 	// mongosh mongodb+srv://cluster0.p5zvm.mongodb.net/sample_mflix --username admin --password admin123 --authenticationDatabase admin
 
 	client, err = mongo.NewClient(options.Client().
-		ApplyURI("mongodb+srv://admin:admin123@cluster0.p5zvm.mongodb.net/sample_mflix?authSource=admin&replicaSet=atlas-v7g7gu-shard-0&readPreference=secondary&appname=MongoDB%20Compass&ssl=true").
+		//ApplyURI("mongodb+srv://admin:admin123@cluster0.p5zvm.mongodb.net/sample_mflix?authSource=admin&replicaSet=atlas-v7g7gu-shard-0&readPreference=secondary&appname=MongoDB%20Compass&ssl=true").
+		ApplyURI("mongodb://localhost:27017").
 		SetPoolMonitor(poolMonitor).
 		SetMonitor(cmdMonitor).
 		SetServerMonitor(serverMonitor).
@@ -156,6 +159,17 @@ func GraphLookup(w http.ResponseWriter, r *http.Request) {
 	graph := graphLookup(ctx, client, email)
 
 	RespondJSON(w, http.StatusOK, graph)
+}
+
+func CommentsReq(w http.ResponseWriter, r *http.Request) {
+
+	ctx, _ := context.WithTimeout(context.Background(), 50*time.Second)
+
+	genre := strings.TrimSpace(r.URL.Query().Get("genre"))
+
+	info := commentAggQuery(ctx, client, genre)
+
+	RespondJSON(w, http.StatusOK, info)
 }
 
 func RespondJSON(w http.ResponseWriter, status int, payload interface{}) {

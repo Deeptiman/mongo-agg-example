@@ -127,45 +127,15 @@ the vote_count using $group operator.
     There is a simple movie details collection and only specific fields 'title', 'plot', 'year', 'rating' required
     to be retrieve from the collection.
 
-    {
-        "_id": ObjectId("573a1391f29313caabcd8b94"),
-        "title": "The Last Command",
-        "plot": "A former Imperial Russian general and cousin of the Czar ends up in Hollywood as an 
-        extra in a movie directed by a former revolutionary.",
-        "rated": "GOOD",
-        "language": "Russian",
-        "year": 1928,
-        "poster": "https://m.media-amazon.com/images/M/MV5BMTg2Mjg3MDI5OF5BMl5BanBnXkFtZTgwMjMzMDMyMjE@._V1_SY1000_SX677_AL_.jpg",
-        "director": "Josef von Sternberg",
-        "awards": {
-            "wins": 2,
-            "nominations" : 1,
-            "result": "Won 1 Oscar. Another 1 win & 1 nomination."
-        },
-        "imdb": {
-            "rating": 8,
-            "votes": 2090,
-            "id": 19071
-        },
-        "genres": ["Drama", "History", "War"]
-    }
+    << gist: https://gist.github.com/Deeptiman/7878b1551b907c1fa7b58b7d911340c6 >>
 
     $project aggregation query
 
-    db.movies.aggregate([{
-        $project: {
-            _id: 0, title: 1, plot: 1, year: 1, imdb.rating: 1
-        }
-    }]).pretty()
+    << gist: https://gist.github.com/Deeptiman/367e8ab17df387a2038521e6e9c01dbc >>
 
     result
 
-    {
-        "plot":"A former Imperial Russian general and cousin of the Czar ends up in Hollywood as an extra in 
-            a movie directed by a former revolutionary.",
-        "title":"The Last Command",
-        "year":1928
-    }
+    << gist: https://gist.github.com/Deeptiman/9e2771ff97595f7f1c67d15b4fcfcbf4 >>
 
     - $group
     The distinct category of grouping documents followed by _id is supported by $group operator. The ouput field
@@ -177,21 +147,15 @@ the vote_count using $group operator.
 
     list of movies:
 
-    << Add 10 list of movies >>
+    << gist: https://gist.github.com/Deeptiman/3ef23d40e48165b3f9e196d13c5cd46e >>
 
     query: 
 
-    db.movies.aggregate([{
-        $group: {
-            "_id": "total_votes",
-            "count": {
-                "$sum": "$imdb.votes"
-            }
-        }
-    }])
+    << gist: https://gist.github.com/Deeptiman/ac615c6e67715bf673f14587ca9f5a18 >>
 
     result: 
-    { "_id" : "total_votes", "count" : 478794967 }
+    
+    << gist: https://gist.github.com/Deeptiman/1b0fd6225e6a33e34e00785648014bb5 >>
 
     Example-2
 
@@ -199,35 +163,18 @@ the vote_count using $group operator.
 
     list of movies:
 
-    << Add 10 list of movies >>
+    << gist: https://gist.github.com/Deeptiman/3ef23d40e48165b3f9e196d13c5cd46e >>
 
     query:
 
-        db.movies.aggregate([
-            // Stage - 1
-            {
-                $unwind: "$genres", // $unwind to deserialize the array of documents
-            },
-            // Stage - 2
-            {
-                $match: {
-                    "genres": "War"           
-                },
-            },
-            // Stage - 3
-            {
-                $group: {
-                    "_id": "Movie",
-                    "doc": {
-                        "$last": "$$ROOT" // similar $first accumulator expression to retreive first movie doc
-                    }
-                },
-            }
-    ]).pretty()
+    << gist: https://gist.github.com/Deeptiman/ea9ebf524e3df3e338365be22759876a >>
 
     result:
 
     << output of the latest movie doc >>
+    
+    << gist: https://gist.github.com/Deeptiman/55c01af050d3f482a950aafad26033f9 >>
+
 
     - $lookup
     The MongoDB stores the documents in multiple collection and also a good practice to distribute the records
@@ -261,12 +208,11 @@ the vote_count using $group operator.
 
     list of movies:
 
-    << Add 10 list of movies >>
+    << gist: https://gist.github.com/Deeptiman/3ef23d40e48165b3f9e196d13c5cd46e >>
 
     list of comments for the movie
 
-    << Add 20 list of comments >>
-
+    << gist: https://gist.github.com/Deeptiman/d3e9afff4a6901d17a6bed5e82b7be6c >>
 
     Example - 1:
 
@@ -275,42 +221,11 @@ the vote_count using $group operator.
 
     query:
 
-        db.movies.aggregate([
-            // Stage - 1
-            {
-                $unwind: "$genres"
-            },
-            // Stage - 2
-            {
-                $match: { 
-                    "genres": "Comedy",
-                    "imdb.rating" : {
-                        $gt: 5
-                    }           
-                }
-            },
-            // Stage - 3
-            {
-                $lookup: {
-                    "from": "comments",
-                    "localField": "_id",
-                    "foreignField": "movie_id",
-                    "as": "comments"
-                }
-            },
-            // Stage - 4
-            {
-                
-                $project: {
-                    "_id": 0,
-                    "comments": 1
-                }
-            }
-        ]).pretty() 
+    << gist: https://gist.github.com/Deeptiman/4c7fb54ac9fa2717b335e4e118617fd0 >> 
 
     result:
 
-    << list of movies with comments >>
+    << gist: https://gist.github.com/Deeptiman/00dec26c13ccd412584b128619788f93 >>
 
     Example - 2:
     
@@ -319,58 +234,13 @@ the vote_count using $group operator.
 
     query:
 
-        db.movies.aggregate([
-            // Stage - 1
-            {
-                $unwind: "$genres"
-            },
-            // Stage - 2
-            {
-                $match: { 
-                    "genres": "Comedy",
-                    "imdb.rating" : {
-                        $gt: 5
-                    }           
-                }
-            },
-            // Stage - 3
-            {
-                $lookup: {
-                    "from": "comments",
-                    "let": {
-                        "movieId": {
-                            "$toObjectId": "$_id"
-                        }
-                    },
-                    "pipeline": [
-                        {
-                            $match: {
-                                $expr: {
-                                    $eq: ["$movie_id", "$$movieId"]
-                                }
-                            }
-                        },
-                        {
-                            $sort : {
-                                "date": -1
-                            }					
-                        }				
-                    ],
-                    "as": "comments"
-                }
-            },
-            // Stage - 4
-            {
-                $project: {
-                    "_id": 0,
-                    "comments": 1
-                }
-            }
-        ]).pretty()
+    << gist: https://gist.github.com/Deeptiman/e125537ef6c328fb3b989cc39b59da57 >>
 
     results:
 
     << list of sorted comments for the movie >>
+
+    << gist: https://gist.github.com/Deeptiman/51cee243d482a6864ff1cf609c138f21 >>
 
     - $graphLookup
         MongoDB provides graph searching among collections with similar relationships. The recursive search 
@@ -400,36 +270,17 @@ the vote_count using $group operator.
     Example :
         Find the nearby theaters within certain radius on given lat/long coordinates.
 
-        << list of theaters >>
+    << list of theaters >>
+    << gist: https://gist.github.com/Deeptiman/93bc3627b593498285d4246c099c665d >>
     
     query:
-        db.theaters.aggregate([
-            // Stage - 1
-            {
-                "$geoNear": {
-                    "near": {
-                        "type": "Point",
-                        "coordinates": []interface{}{latC,longC},
-                    },
-                    "minDistance": 2,
-                    "maxDistance": 200000,
-                    "distanceField": "distance",
-                    "includeLocs": "geo",
-                    "spherical": true,
-                },
-            },
-            // Stage - 2
-            {
-                "$project": bson.M{
-                    "location.geo": 0,
-                },
-            }
-        ])
+
+        << gist: https://gist.github.com/Deeptiman/edd2dddabbbefb6cd1c89c96d661e1ed >>
 
     result: 
 
+        << gist: https://gist.github.com/Deeptiman/e0592da8a6242d1f6def22aa4a5a4e51 >>
     
-
 
     Analyzing Explain Plan
 
