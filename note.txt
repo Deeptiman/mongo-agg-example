@@ -261,6 +261,22 @@ the vote_count using $group operator.
             }
         }
 
+    Example:
+
+    Find the comments given by the user based on email address.
+
+    list of users
+
+    << gist: https://gist.github.com/Deeptiman/0b01e66497933cd4b33a3df9e7524263 >>
+
+    query:
+
+    << gist: https://gist.github.com/Deeptiman/413e735f274999841a75e0e666110c2a >>
+
+    result:
+
+    << gist: https://gist.github.com/Deeptiman/ec21b1f8c2d96f1d0a42953f6ea1641a >>
+
 
     - $geoNear
         MongoDB supports geolocation queries with $geoNear aggregator. There are plenty of use-cases on 
@@ -280,6 +296,10 @@ the vote_count using $group operator.
     result: 
 
         << gist: https://gist.github.com/Deeptiman/e0592da8a6242d1f6def22aa4a5a4e51 >>
+    
+
+    Perfomance of Aggregation Query
+
     
 
     Analyzing Explain Plan

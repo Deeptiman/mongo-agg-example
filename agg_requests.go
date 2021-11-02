@@ -140,7 +140,7 @@ func geoNearAggQuery(ctx context.Context, client *mongo.Client, lat, long string
 // #4
 func graphLookup(ctx context.Context, client *mongo.Client, email string) interface{} {
 
-	database := client.Database("sample_mflix")
+	database := client.Database("movie_details")
 	collection := database.Collection("users")
 
 	query := []bson.M{
@@ -153,7 +153,7 @@ func graphLookup(ctx context.Context, client *mongo.Client, email string) interf
 		},
 		bson.M{
 			"$graphLookup": bson.M{
-				"from": "comments",
+				"from": "comment_list",
 				"startWith": "$email",
 				"connectFromField": "email",
 				"connectToField": "email",
@@ -166,7 +166,7 @@ func graphLookup(ctx context.Context, client *mongo.Client, email string) interf
 		},
 		bson.M{
 			"$lookup": bson.M{
-				"from": "movies",
+				"from": "movie_list",
 				"let": bson.M{
 					"movieId": bson.M{
 						"$toObjectId": "$comments.movie_id",
@@ -197,7 +197,6 @@ func graphLookup(ctx context.Context, client *mongo.Client, email string) interf
 			"$project": bson.M{
 				"name": 0,
 				"email": 0,
-				"password": 0,
 			},
 		},
 	}
