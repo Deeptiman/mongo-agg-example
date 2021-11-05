@@ -1,32 +1,41 @@
-MongoDB Aggregation Pipeline in Go
+Deep dive into MongoDB Aggregation Framework
 
+In this article, we will deep dive into the complex usage of the MongoDB aggregation framework to retrieve 
+documents from multiple collections using an aggregation pipeline query that will perform much faster than 
+the existing functional Map-reduce models. 
 
 Run Database query with one-go
 
-The database transaction to retrieve a large number of records in a single query is a daunting task. The millions of 
-documents stored in the database have complex relationships with data nodes that require seamless flow with the software 
-application service. The data node defines the business data processing workloads to perform an intensive task in real-time. 
-The business software applications (Stock Market, Disaster Management, a Cryptocurrency marketplace, Census dashboard) 
-require in-flight analytical data with a single database query to retrieve grouped data and a faster business transaction 
-timeline. 
+The database transaction to retrieve a large number of records in a single query is a daunting task. 
+The millions of documents stored in the database have complex relationships with data nodes that require 
+seamless flow with the software application service. 
+
+The data node defines the business data processing workloads to perform an intensive task in real-time. 
+The business software applications (Stock Market, Disaster Management, a Cryptocurrency marketplace, 
+Census dashboard) require in-flight analytical data with a single database query to retrieve grouped data 
+and a faster business transaction timeline. 
 
 Techniques to handle large datasets
 
-MongoDB provides data processing functions to analyze large datasets and produce the final aggregated results. The Map Reduce 
-and Aggregation pipeline are 2 ways of aggregating, grouping, filtering data nodes in MongoDB with several functional stages.
+MongoDB provides data processing functions to analyze large datasets and produce the final aggregated results. 
+The Map Reduce and Aggregation pipeline are two ways of aggregating, grouping, filtering data nodes in 
+MongoDB with several functional stages.
 
 -  What is Map-Reduce?
-    Map Reduce is a javascript functional model to map documents with emit(key-value) pair based function and the reduce
-    function performs the aggregation of the data node that returns the output to the client. 
+    Map Reduce is a javascript functional model to map documents with emit(key-value) pair-based functions 
+that pass value to the reduce function to perform the aggregation of the data node that returns the output 
+to the client. 
 
     -- Structure of Map-Reduce in MongoDB
-       MongoDB uses "mapReduce" database command for a collection to apply the aggregation for a query. The map-reduce 
-       function faciliate to write computational logic for a data node under map function and emit the key-value result to
-       reduce function for finializing the resultant document.  
+       MongoDB uses the "MapReduce" database command for a collection to apply the aggregation query. 
+       The map-reduce function facilitates writing key-value pair objects in map function and computational 
+       logic in reduce function to finalize the result.  
        
     For example: A "mapReduce" function to count number of imdb votes for a movie stored under a collection.
 
     <<-- screenshot movie list -->>
+
+    The mongodb collection has "23,500" movie records.
 
     db.movies.mapReduce(
         // map
@@ -55,27 +64,69 @@ and Aggregation pipeline are 2 ways of aggregating, grouping, filtering data nod
         }
     ).find();
 
+    output:
+    { 
+        "_id" : 1.0, 
+        "value" : 271026594.0
+    }
+
+    << screenshot: map-reduce (imdb_vote_count).jpg >>
+
+    The map-reduce query took 280ms to count total_votes for the movies has less than 7.5 imdb rating.
+
+    Why Map-Reduce much slower in query performance?
+
+    1. Sequence of tasks during the process
+    The map-reduce function uses JavaScript that runs in a single-thread Spider Monkey engine. The map-reduce 
+    operation involves many tasks such as reading the input collection, execution of map function, execution 
+    of reduce function, writing to the temporary collection during the processing, and writing the output 
+    collection. 
+
+    2. map-reduce conncurrency & global write lock
+    The map-reduce-concurrency operation applies many global write lock during the processing of the queries 
+    that makes the execution much slower to generate the final document.
+
+    -- global write lock
+    - The read lock applies to the input collection to fetch 100 documents.
+    - The write lock is applied to creating the output collection and insert, merge, replace, reduce documents into output collection.
+    - The write lock is global and block all the remaining operations on the mongod instances.
+
+    MongoDB 5.0 release deprecated the map-reduce from the database engine. The aggregation pipeline is 
+    much faster in performance querying multiple collections with the complex data-node relationship. 
+    However, MongoDB provides a few aggregation pipeline operators [$group, $merge, $accumulator, $function] 
+    in the framework layer to facilitate writing Map-Reduce operations using the aggregation pipeline.
+
 
 - What is Aggregation pipeline?
 
-    The Aggregation pipeline works as a data processing framework in MongoDB to aggregate hierarchical data 
-nodes. There will be several stages to process the documents that pass through a pipeline to filter out the 
-final analyzed document. The pipeline operators used to apply logical queries and accumulate the filtered 
-documents to transform an output structure. The performance of the aggregation pipeline is significantly high 
-compared to Map-Reduce because the framework runs with compiled C++ codes. The data flow control works as a 
-sequence of stages that the output of the previous stage becomes the input to the next stage. In each stage, 
-the pipeline operator decides the type of aggregation action to perform in the database engine. 
+    The Aggregation pipeline works as a data processing framework in MongoDB to aggregate hierarchical 
+data nodes. There will be several stages in the pipeline to process the documents to filter out the final 
+analyzed document. 
+
+    The pipeline operators used to apply logical queries and accumulate the filtered records to transform 
+an output structure. The performance of the aggregation pipeline is significantly high compared to Map-Reduce 
+because the framework runs with compiled C++ codes. 
+
+    The data flow control works as a sequence of stages that the output of the previous pipeline stage 
+becomes the input to the next pipeline stage. The pipeline operator decides the type of aggregation action 
+to perform in the database engine. 
+
 
 - How to write Aggregation pipeline?
 The pipeline written as BSON format passes directly into the "aggregate()" function in the Mongo Shell for 
 executing the aggregation query. Also, MongoDB provides language-specific drivers that will have an in-built 
 Aggregation framework with structure API functions to implement the Aggregation pipeline in the application. 
 
-The following "aggregate" function count the total votes using aggregation pipeline. In the first stage, 
-the "$match" operator applies a conditional query to filter the documents with less than 7.5 "imdb.rating". 
-Then the second stage takes the filtered document as input to accumulate the $sum of "imdb.votes" and groups 
-the vote_count using $group operator. 
+The following "aggregate" function counts the total votes using the aggregation pipeline. 
 
+Stage - 1
+The "$match" operator applies a conditional query to filter the documents with less than 7.5 "imdb.rating". 
+
+Stage - 2
+Then the second stage takes the filtered document as input to accumulate the $sum of "imdb.votes" and groups 
+the vote_count using the "$group" operator.
+
+Query:
     db.movies.aggregate(
 
         // Pipeline
@@ -102,30 +153,37 @@ the vote_count using $group operator.
         ]
     );
 
+Output:
+{ 
+    "_id" : "total_vote", 
+    "vote_count" : NumberInt(271026594)
+}
+
+<< screenshot: mongo-aggregation-pipelin(imdb_vote_count).png >>
+
     Complex Aggregation Pipelines
 
     The MongoDB aggregation framework has many operators that support to aggregate in the pipeline stages. 
-    The operators are treated as MongoDB query commands to perform query actions and then either process the 
-    pipeline into the next available stage or collect the filtered document at the final pipeline stage. 
-    The pipeline execution is an algorithmic process of a finite sequence of blocking structures that perform
-    several aggregation functions.
+    The operators are treated as MongoDB query commands to perform query actions and then either process 
+    the pipeline into the next available pipeline stage or collect the filtered document at the final 
+    pipeline stage. The pipeline execution is an algorithmic process of a finite sequence of blocking 
+    structures that perform several aggregation functions.
 
-    - sorting, merging of documents from more one collection.
-    - Arithmatic computation of numeric data nodes. 
+    - sorting, merging documents from more than one collection.
+    - Arithmetic computation of numeric data nodes. 
     - Accumulate a data node to apply Mongo aggregation expression ($avg, $sum, $addField, $concat).
-    - Apply GeoSpatial command to find near by address or calculate min/max distance.
+    - Apply GeoSpatial command to find the nearby address or calculate min/max distance.
     - and many more
 
     Type of Aggregation Pipeline Operators
 
     - $project
-      In the collection of documents, sometimes of their won't be need to fetch all data items. The performance
-    of query improved with selecting neccessary field of documents.
+      The query performance is always faster by selecting specific field items from a single record.
 
     Example:
 
-    There is a simple movie details collection and only specific fields 'title', 'plot', 'year', 'rating' required
-    to be retrieve from the collection.
+    In the following movie record only specific fields 'title', 'plot', 'year', 'rating' are required to be 
+    retrieved from the collection.
 
     << gist: https://gist.github.com/Deeptiman/7878b1551b907c1fa7b58b7d911340c6 >>
 
@@ -138,12 +196,12 @@ the vote_count using $group operator.
     << gist: https://gist.github.com/Deeptiman/9e2771ff97595f7f1c67d15b4fcfcbf4 >>
 
     - $group
-    The distinct category of grouping documents followed by _id is supported by $group operator. The ouput field
-    document holds the accumlated value of object. There are various accumulator expressions used in different scenarios.
+    The distinct grouping of documents followed by _id is supported by the $group operator. The output field 
+    document holds the accumulated value of an object.
 
     Example-1
 
-    - Find the total number of votes for all the movies using $sum accumulator expression.
+    - Find the total number of votes for all the movies using the $sum accumulator expression.
 
     list of movies:
 
@@ -177,9 +235,9 @@ the vote_count using $group operator.
 
 
     - $lookup
-    The MongoDB stores the documents in multiple collection and also a good practice to distribute the records
-    to reduce the storage volume for collection. The foreign key attribute to maintain relationship between collection
-    with similar shared data items. 
+    MongoDB stores the documents in multiple collections as a best practice to distribute the records to 
+    reduce the storage volume for mongo collections. The $lookup operator searches for data nodes among 
+    mongo collections that maintain relationships to aggregate the output record.
 
     $lookup query structure
 
@@ -216,8 +274,8 @@ the vote_count using $group operator.
 
     Example - 1:
 
-    The list of comments for the movies stored in separate collection and requirement is to retreive movie comments
-    with genres "Comedy" and "imdb.rating" greater than 5.
+    The list of comments for the movies is stored in a separate collection and the requirement is to 
+    retrieve movie comments with genres "Comedy" and "imdb.rating" greater than 5.
 
     query:
 
@@ -229,8 +287,8 @@ the vote_count using $group operator.
 
     Example - 2:
     
-    In this requirement to retrieve sorted with latest comment in ascending order. So, we need to apply $lookup 
-    pipeline attribute to run sorting pipeline within the join collection.
+    Retrieve comments sorted in ascending order. So, we need to apply the $lookup pipeline attribute to run 
+    the sorting pipeline within the join collection.
 
     query:
 
@@ -243,9 +301,9 @@ the vote_count using $group operator.
     << gist: https://gist.github.com/Deeptiman/51cee243d482a6864ff1cf609c138f21 >>
 
     - $graphLookup
-        MongoDB provides graph searching among collections with similar relationships. The recursive search 
-    on the collection continues until the searching node is found or the defined levels of maxDepth have 
-    reached the limit.
+        The graphLookup operator performs a recursive search on collections using graph techniques that 
+    connects document fields as nodes and edges. The recursive search operation continues based on the 
+    maximum recursion depth defined with the "maxDepth" parameter.
 
     $graphLookup query structure
 
@@ -263,7 +321,7 @@ the vote_count using $group operator.
 
     Example:
 
-    Find the comments given by the user based on email address.
+    Find the comments given by the user based on the email address.
 
     list of users
 
@@ -280,11 +338,11 @@ the vote_count using $group operator.
 
     - $geoNear
         MongoDB supports geolocation queries with $geoNear aggregator. There are plenty of use-cases on 
-    geography coordinates to calculate nearby distances with the point. The GeoJSON coordinate pair work 
-    well in the aggregation to point to the closet documents in the collection.
+    geography coordinates to calculate nearby distances with the geo point. The GeoJSON coordinate pair 
+    work well in the aggregation to point to the closet documents in the collection.
 
     Example :
-        Find the nearby theaters within certain radius on given lat/long coordinates.
+        Find the nearby theaters within a certain radius on given lat/long coordinates.
 
     << list of theaters >>
     << gist: https://gist.github.com/Deeptiman/93bc3627b593498285d4246c099c665d >>
@@ -298,22 +356,16 @@ the vote_count using $group operator.
         << gist: https://gist.github.com/Deeptiman/e0592da8a6242d1f6def22aa4a5a4e51 >>
     
 
-    Perfomance of Aggregation Query
+    Performance of MongoDB Aggregation Queries
 
+    The performance measurement of the aggregation query is analyzed using the explain plan. MongoDB supports 
+    three types of verbosity mode queryPlanner, executionStats, and allPlansExecution to explain a query 
+    execution plan.  
     
-
-    Analyzing Explain Plan
-
-    The performance measurement of the aggregation query is fully analyzed using explain plan. MongoDB supports
-    three type of verbosity mode than can explain a query execution plan, queryPlanner, executionStats and 
-    allPlansExecution. 
-    
-    As an internal layer, the aggregation framework uses MongoDB Query Language (MQL) to execute the query. 
-    In the process of optimizing the aggregation query database engine reorders the pipeline stages and 
-    embeds the $cursor operator as the first stage of the pipeline to decide to pick the best possible 
-    winning plan for stages. The winningPlan will form the metadata to make a judgment call on type document
-    scan operation [IXSCAN, COLLSCAN, FETCH] on stage for faster retreival of the documents.
-
+    In the process of optimizing the aggregation query, the database engine reorders the pipeline stages. 
+    The first pipeline stage $cursor operator picks the best possible winning plan to form the metadata to 
+    make a judgment call on the type of document scan operation [IXSCAN, COLLSCAN, FETCH] to faster the 
+    document retrieval process on the pipeline stage.
 
     Explain with queryPlanner
 
@@ -369,12 +421,10 @@ the vote_count using $group operator.
         }
     ]
 
-    Here the "winningPlan" stage metadata is scanned with "COLLSCAN" operation, so the entire collection data 
-    nodes require to iterate all rows and records to map/match with the particular records. The COLLSCAN is 
-    pretty slow and very much ineffective mapping with an enormously large data set. The queryPlanner also 
-    supports indexing with IXSCAN that doesn't need to perform an entire collection scan but an index filter 
-    can instantly map with a particular record.
-
+    Here the "winningPlan" stage metadata is scanned with the "COLLSCAN" operation, so the entire collection 
+    requires iterating all rows to map/match the particular records. The COLLSCAN is pretty slow and very 
+    much ineffective mapping with an enormously large data set. The queryPlanner also supports indexing 
+    with IXSCAN that filters instantly with the particular record.
 
     Explain with executionStats
     
@@ -432,27 +482,28 @@ the vote_count using $group operator.
     ]
 
 
-    nReturned: Number of document returned from the query, in this case 18511 movies returned to the client.
+    nReturned: The total number of documents returned from the query, in this case, 18511 movies returned 
+    to the client.
 
-    executionTimeMillis: The query execution time in millisecond that helps to understand the performance of 
-    the aggregation query.
+    executionTimeMillis: The query execution time in a millisecond helps to understand the performance 
+    of the aggregation query.
 
     filter: The conditional query statement included in the aggregation pipeline. 
     
     "imdb.rating" : { "$lt" : 7.5 }
 
-    docsExamined: Total document examined in the collection to match with particular searching record
+    docsExamined: The total document examined in the collection to match with a particular searching record
 
 
-
-
-    Visualizing Aggregation flow in Studio 3T
+    Visualizing Aggregation flow with tool
 
     In Studio 3T, the transactional flow shows the total time to produce the result and the size of the 
-    documents generated in each stage of the pipeline. The explain query in Studio 3T quite useful to 
-    visualize the process for an aggregation pipeline.
+    documents generated in each stage of the pipeline. The explain() query in Studio 3T is quite helpful 
+    to visualize the process for an aggregation pipeline.
     
     << -- screenshot of aggregation flow -- >>
     
-
+    Execute Aggregation pipeline in MongoDB Compass UI
+    
+    << -- screenshot of mongodb compass aggregation flow -- >>
 
