@@ -495,7 +495,7 @@ Output:
     docsExamined: The total document examined in the collection to match with a particular searching record
 
 
-    Visualizing Aggregation flow with tool
+    Visualizing Aggregation flow with Studio 3T
 
     In Studio 3T, the transactional flow shows the total time to produce the result and the size of the 
     documents generated in each stage of the pipeline. The explain() query in Studio 3T is quite helpful 
@@ -503,7 +503,14 @@ Output:
     
     << -- screenshot of aggregation flow -- >>
     
-    Execute Aggregation pipeline in MongoDB Compass UI
+    Execute Aggregation pipeline in MongoDB Compass GUI
     
+    The MongoDB compass GUI is pretty handy to execute aggregation queries. The debugging of the 
+    aggregation pipeline helps practically test the pipeline before applying it into any of the 
+    programmings languages.
+
     << -- screenshot of mongodb compass aggregation flow -- >>
 
+
+    
+    
