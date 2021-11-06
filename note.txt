@@ -221,7 +221,7 @@ Output:
     The "$project" stage best use case to produce completely different output document than the defined 
     internal document. The same movie document requires to display a new shape of document with a few lines 
     of projection query.
-    
+
     output document: 
 
     << gist: https://gist.github.com/Deeptiman/b23a0a2bb2235087fab4cf66039bdce4 >>
@@ -395,8 +395,7 @@ Output:
 
         << gist: https://gist.github.com/Deeptiman/e0592da8a6242d1f6def22aa4a5a4e51 >>
     
-
-    Aggregation technique to mask sensitive fields
+    Information Security with Mongo Aggregation framework
 
     So far, we have seen many different mongo aggregation techniques to retrieve documents from the 
     collection used by the client application for analyses. But not every category of data needed to be 
@@ -406,6 +405,44 @@ Output:
     regulatory audits to present the third party risk management, cybersecurity infrastructure to reach the 
     compliance requirement to perform business transaction data in the software application. 
 
+    - Read only collection using View
+        MongoDB view works quite similarly to SQL views that query other collections using certain 
+    aggregation pipelines to retrieve the filtered document that is only allowed to be visible for the client
+    application.
+
+    Example:
+    There are few user data with sensitive personal information and while the client application tries to 
+    read the user data the sensitive personal information must be restricted.
+
+    << user personal info >>
+
+    << gist: https://gist.github.com/Deeptiman/8aa96883621aff5b2fcb104999afa304 >>
+
+    query:
+
+    1. Create `user_data_list` view by querying from `personal_info` collection with removing `mobile` and 
+    `passport_number`.
+
+        << gist: https://gist.github.com/Deeptiman/7d7632aa742e08975ee7f74beb94aca8 >>
+
+        result:
+
+        << gist: https://gist.github.com/Deeptiman/0b5a1c060519da3e0831c33b5f553be2 >>
+    
+    2. Read the `user_data_list` view
+
+        << gist: https://gist.github.com/Deeptiman/f993e51a6c38bc385c043779e5a522d9 >>
+
+        result:
+
+        << gist: https://gist.github.com/Deeptiman/befe3ad4eb8c97b21aa99f21ea888c9c >>
+
+    So, from the `user_data_list` view result we can see `mobile` and `passport_number` details removed and 
+    restricted for the client.
+    
+    The client application will have access to the created view 
+
+    - Aggregation technique to mask sensitive fields
     MongoDB aggregatation operators provides the technique to mask sensitive field information that remains
     obfuscate in the client application. As a scenario, we will try to mask credit card information without
     exposing sensitive fields like:
@@ -425,7 +462,6 @@ Output:
     result: 
 
     << gist: https://gist.github.com/Deeptiman/645bd929da28e1fdb4363378be77dfdd >>
-
 
 
     Performance of MongoDB Aggregation Queries
