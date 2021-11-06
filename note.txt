@@ -178,12 +178,13 @@ Output:
     Type of Aggregation Pipeline Operators
 
     - $project
-      The query performance is always faster by selecting specific field items from a single record.
-
+      The $project operator facilitates to include or exclude certain fields from the document in a single 
+    stage.
+    
     Example:
 
-    In the following movie record only specific fields 'title', 'plot', 'year', 'rating' are required to be 
-    retrieved from the collection.
+    In the following movie record only specific fields 'title', 'plot', 'year', 'rating', 'rated', 'language', 
+    'year', 'poster', 'director', 'imdb', 'awards', 'genres' are required to be display from the collection. 
 
     << gist: https://gist.github.com/Deeptiman/7878b1551b907c1fa7b58b7d911340c6 >>
 
@@ -194,6 +195,45 @@ Output:
     result
 
     << gist: https://gist.github.com/Deeptiman/9e2771ff97595f7f1c67d15b4fcfcbf4 >>
+
+    Problems with $project stage
+    The project operator is quite verbose and lengthy as the fields are defined explicitly in the projection. 
+    We have seen in the example that the project stage is very derivative to include field items. 
+    The projection will be much more tedious to include fields in a large set of documents. The project stage 
+    refactor will not be optimal to define the new field in the result. 
+
+    Optimized solution with $set and $unset
+    The $set and $unset provides efficient way to write inclusion and exclusion of fields in the pipeline. 
+    The specific field items are only required to add, modify, remove in the stage.
+
+    query:
+
+    << gist: https://gist.github.com/Deeptiman/fd14f26419118356d6434e9996f10216 >>
+
+    result:
+
+    << gist: https://gist.github.com/Deeptiman/cda4dca212a0023262355daabaf91bbd >>
+
+    As we can see the same projection query is much more clear and flexible to write using $set and $unset 
+    stage.
+
+    Best scenario for $project over $set/$unset
+    The "$project" stage best use case to produce completely different output document than the defined 
+    internal document. The same movie document requires to display a new shape of document with a few lines 
+    of projection query.
+    
+    output document: 
+
+    << gist: https://gist.github.com/Deeptiman/b23a0a2bb2235087fab4cf66039bdce4 >>
+
+    Bad approach with $set/$unset
+
+    << gist: https://gist.github.com/Deeptiman/a8698444a7a79920721e18f9fca4bb8d >>
+
+    Good approach with $project
+
+    << gist: https://gist.github.com/Deeptiman/36b2dcd3363cad48948e18d4202c78d9 >>
+
 
     - $group
     The distinct grouping of documents followed by _id is supported by the $group operator. The output field 
@@ -355,6 +395,38 @@ Output:
 
         << gist: https://gist.github.com/Deeptiman/e0592da8a6242d1f6def22aa4a5a4e51 >>
     
+
+    Aggregation technique to mask sensitive fields
+
+    So far, we have seen many different mongo aggregation techniques to retrieve documents from the 
+    collection used by the client application for analyses. But not every category of data needed to be 
+    visible or readable to the 3rd party client. The sensitive field information access remains confidential 
+    to the owner to secure the information security. Whenever a database engine is authorized to store 
+    sensitive information is regulated by data privacy law. The organization goes through a series of 
+    regulatory audits to present the third party risk management, cybersecurity infrastructure to reach the 
+    compliance requirement to perform business transaction data in the software application. 
+
+    MongoDB aggregatation operators provides the technique to mask sensitive field information that remains
+    obfuscate in the client application. As a scenario, we will try to mask credit card information without
+    exposing sensitive fields like:
+
+        - Partilly obfuscate card holder name
+        - Obfuscate first 12 digits card number and only retain last 4 digits
+        - Randomize the expiry date-time by adding-substracting maximum 30 days
+        - Replace the 3 digit CVC code with random set of 3 digits.
+    
+    << credit card info table >>
+    << gist: https://gist.github.com/Deeptiman/f28ac8192ac3ad528bd2406d785afa13 >>
+
+    query: 
+
+    << gist: https://gist.github.com/Deeptiman/0c2b389f4661d0011d6b86810039df49 >>
+
+    result: 
+
+    << gist: https://gist.github.com/Deeptiman/645bd929da28e1fdb4363378be77dfdd >>
+
+
 
     Performance of MongoDB Aggregation Queries
 
