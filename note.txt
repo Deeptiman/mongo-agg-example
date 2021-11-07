@@ -541,7 +541,6 @@ Output:
     db.getCollection("movies").explain("executionStats").aggregate(pipeline)
 
     "stages" : [
-
             "executionStats" : {
                     "executionSuccess" : true, 
                     "nReturned" : 18511.0, 
@@ -620,5 +619,12 @@ Output:
     << -- screenshot of mongodb compass aggregation flow -- >>
 
 
-    
-    
+    Conclusion
+    MongoDB aggregation framework has a complex use case in data processing workload. The pipeline stages 
+    are similar to functional programming languages that output the data from one pipeline stage to input 
+    the data to the next pipeline stage. We have executed aggregation pipeline queries from this article 
+    with many different scenarios to understand the practical technique to perform mass data manipulation. 
+    The MongoDB aggregation framework looks different from regular procedural programming at the beginner 
+    level. But after understanding the building structure of aggregation expression operators, Developers 
+    will find the aggregation framework similar to Domain Specific Language (DSL).
+       
